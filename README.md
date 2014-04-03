@@ -30,7 +30,7 @@ and you can test the API at:<br>
 The default user:pass to access the API over http is `api:api`.
 
 
-Basic Auth is set up for this API application and can be found in`securityContext.xml`.
+Basic Auth is set up for this API application and can be found in `securityContext.xml`.
 
 
 Also note that `jdbc.properties` is placed in the classes directory and preconfigured code is commented out in `applicationContext.xml` to help you easily connect to a database.
