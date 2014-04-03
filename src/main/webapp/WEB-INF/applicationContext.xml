@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+           http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+           http://www.springframework.org/schema/aop 
+           http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
+           http://www.springframework.org/schema/tx 
+           http://www.springframework.org/schema/tx/spring-tx-4.0.xsd">
+
+	<!-- spring bean configuration -->
+	<bean id="apiManager" class="org.matthewroberts.apibase.service.impl.ApiManagerImpl">
+		<property name="apiDao" ref="apiDao" />
+	</bean>
+
+	<bean id="apiDao" class="org.matthewroberts.apibase.persistence.impl.ApiDaoImpl">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	
+	<bean name="apiRest" class="org.matthewroberts.apibase.rest.ApiRest">
+		<property name="apiManager" ref="apiManager" />
+	</bean>
+	<!-- end spring bean configuration -->
+
+	<!-- database configuration -->
+	<bean id="dataSource" class="org.springframework.jndi.JndiObjectFactoryBean">
+    	<property name="jndiName" value="java:comp/env/jdbc/data" />
+	</bean>
+
+	<!-- For internal database connections only - don't forget to add MySQL connector jar! -->
+	<!--
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="${jdbc.driver}" />
+		<property name="url" value="${jdbc.url}" />
+		<property name="username" value="${jdbc.user}" />
+		<property name="password" value="${jdbc.pass}" />
+	</bean>
+	-->
+	<!-- end database configuration -->
+	
+	<bean id="propertyConfigurer"
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations">
+			<list>
+				<value>classpath:jdbc.properties</value>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	<!-- end database configuration -->
+
+	<!-- security configuration -->
+	<bean id="securityContextPersistenceFilter"
+		class="org.springframework.security.web.context.SecurityContextPersistenceFilter">
+		<property name='securityContextRepository'>
+			<bean
+				class='org.springframework.security.web.context.HttpSessionSecurityContextRepository'>
+				<property name='allowSessionCreation' value='false' />
+			</bean>
+		</property>
+	</bean>
+	<!-- end security configuration -->
+
+	<!-- exception handling -->
+	<bean class="org.matthewroberts.apibase.util.ExceptionResolver" >
+        <property name="exceptionMappings">
+            <props>
+                <prop key="org.springframework.web.servlet.PageNotFound">notFound</prop>
+                <prop key="java.lang.Exception">failure</prop>
+            </props>
+        </property>
+    </bean>
+	<!-- end exception handling -->
+
+	<!-- transaction configuration -->
+	<aop:config>
+		<aop:advisor pointcut="execution(* *..ApiManager.*(..))"
+			advice-ref="txAdvice" />
+	</aop:config>
+
+	<tx:advice id="txAdvice">
+		<tx:attributes>
+			<tx:method name="save*" />
+			<tx:method name="*" read-only="false" />
+		</tx:attributes>
+	</tx:advice>
+	<!-- end transaction configuration -->
+</beans>
